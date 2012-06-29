@@ -247,7 +247,7 @@ int main(int argc, char * argv[])
 		printf("Failed to initialize GL, exit\n");
 		return 1;
 	}
-	writebodies("test.bdy", bodies, nbodies, timestep, G, fudge, treeratio);
+	//writebodies("test.bdy", bodies, nbodies, timestep, G, fudge, treeratio);
 	printf("Entering simulation loop\n");
 	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio);
 		
