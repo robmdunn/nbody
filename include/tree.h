@@ -22,7 +22,6 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #define TREE
 
 enum quadrant { q1, q2, q3, q4 };
-enum method { method_allpoints, method_tree };
 
 struct node {
 	double totalmass;	

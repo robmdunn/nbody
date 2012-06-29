@@ -63,6 +63,8 @@ enum quadrant getquadrant(double x, double y, double xmin, double xmax, double y
 	
 }
 
+
+
 struct node * createnode(struct body * bodyp, double xmin, double xmax, double ymin, double ymax)
 {
 	struct node * rootnode;

@@ -25,13 +25,14 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody.h"
 #include "tree.h"
 #include "draw.h"
+#include "fileio.h"
 
 double randf() 
 {
 	return (double)rand() / (double)RAND_MAX;
 }
 
-struct body * initbodies(const int nbodies, const double mass, const double spin, const double mzero)
+struct body * randinitbodies(const int nbodies, const double mass, const double spin, const double mzero)
 {
 	struct body * bodies;
 	double r, theta;
@@ -82,7 +83,7 @@ void freebodies(struct body * bodies)
 	return;
 }
 
-int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const int mfixed, const double treeratio)
+int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio)
 {
 	double dx, dy, r, rsqr; //x distance, y distance, distance, distance^2
 	double force;
@@ -161,13 +162,6 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 			//printf("p=%d vx=%e vy=%e x=%e y=%e\n", i, bodies[i].vx, bodies[i].vy, bodies[i].x, bodies[i].y);
 		} 
 		
-		if(!mfixed==0)  
-		{
-			bodies[0].vx = 0.0;
-			bodies[0].vx = 0.0;
-			bodies[0].x = 0.0;
-			bodies[0].y = 0.0;
-		}		
 	}	
 	draw(bodies, nbodies, rootnode);
 	
@@ -175,7 +169,7 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 	return 0;
 }
 
-int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const int mfixed, const double treeratio)
+int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio)
 {
 	double simtime = 0.0;
 	
@@ -185,7 +179,7 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 		simtime += timestep;
 		printf("time: %f\r",simtime);
 				
-		runtimestep(bodies, nbodies, timestep, G, fudge, mfixed, treeratio);
+		runtimestep(bodies, nbodies, timestep, G, fudge, treeratio);
 					
 	} 
 	
@@ -203,30 +197,29 @@ int main(int argc, char * argv[])
 	double fudge = 0.005;  //"Softening Factor" to prevent singularity in force calculation
 	double spin = 0.05;
 	double mzero = 10000000;
-	int mfixed = 0;
+
 	double treeratio = 3; // threshold for ratio of distance to quadrant size for treesum
 	
 	if(argc!=2 && argc!= 5 && argc!=7 && argc!=10)
 	{
-		printf("usage: %s <nbodies> [<mass> <timestep> <tree ratio>[<G> <fudge> [<spin> <mzero> <mfixed>]]]\n",argv[0]);
+		printf("usage: %s <nbodies> [<mass> <timestep> <tree ratio>[<G> <fudge> [<spin> <mzero>]]]\n",argv[0]);
 		return 1;
 	}
 	
 	nbodies = atoi(argv[1]);  // get a pile of command line arguments
-	if(argc==5 || argc == 7 || argc==10)
+	if(argc==5 || argc == 7 || argc==9)
 	{
 		mass = atof(argv[2]);
 		timestep = atof(argv[3]);
 		treeratio = atof(argv[4]);
-		if(argc==7 || argc==10)
+		if(argc==7 || argc==9)
 		{
 			G = atof(argv[5]);
 			fudge = atof(argv[6]);
-			if(argc==10)
+			if(argc==9)
 			{
 				spin = atof(argv[7]);
 				mzero = atof(argv[8]);
-				mfixed = atoi(argv[9]);
 			}
 		}
 	}
@@ -239,25 +232,24 @@ int main(int argc, char * argv[])
 	printf("fudge = %f\n", fudge);
 	printf("spin = %f\n", spin);
 	printf("mzero mass = %e\n",mzero);
-	printf("mzero fixed = %d\n",mfixed);
 	
 	srand(1);  //lets seed RNG with a constant to make this easier to debug
 	
 	
-	if(!(bodies = initbodies(nbodies, mass, spin, mzero)))  //allocate + initialize bodies
+	if(!(bodies = randinitbodies(nbodies, mass, spin, mzero)))  //allocate + initialize bodies
 	{
 		printf("Failed to allocate memory for %d bodies\n",nbodies);
 		return 1;
 	}
 	
-	if(!initwindow()) //initialize window
+	if(!initwindow(600, 600)) //initialize window
 	{
 		printf("Failed to initialize GL, exit\n");
 		return 1;
 	}
-		
+	writebodies("test.bdy", bodies, nbodies, timestep, G, fudge, treeratio);
 	printf("Entering simulation loop\n");
-	simulateloop(bodies, nbodies, timestep, G, fudge, mfixed, treeratio);
+	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio);
 		
 	closewindow();
 	

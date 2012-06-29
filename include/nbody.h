@@ -27,15 +27,15 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 
 struct body {
 	double m; //mass
-	double x, y, z; //x,y position
-	double vx, vy, vz; //x,y velocity
-	double fx, fy, fz; //x,y force
+	double x, y; //x,y position
+	double vx, vy; //x,y velocity
+	double fx, fy; //x,y force
 };
 
 double randf();
-struct body * initbodies(const int nbodies, const double mass, const double spin, const double mzero);
-int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const int mfixed, const double treeratio);
-int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const int mfixed, const double treeratio);
+struct body * randinitbodies(const int nbodies, const double mass, const double spin, const double mzero);
+int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio);
+int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio);
 void freebodies(struct body * bodies);
 
 

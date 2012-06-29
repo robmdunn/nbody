@@ -24,7 +24,7 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include "tree.h"
 #include "draw.h"
 
-int initwindow()
+int initwindow(int x, int y)
 {
 	
 	if(!glfwInit())	//initialize GLFW
@@ -33,7 +33,7 @@ int initwindow()
 		return 0;
 	}
 	
-	if( !glfwOpenWindow( 800, 800, 0,0,0,0, 32,0, GLFW_WINDOW ) )
+	if( !glfwOpenWindow( x, y, 0,0,0,0, 32,0, GLFW_WINDOW ) )
 	{
 		printf("Failed to open GLFW window\n");
 		glfwTerminate();
@@ -63,16 +63,6 @@ void closewindow()
 {
 	printf("\nTerminate GL\n");
 	glfwTerminate();
-}
-
-void draw(struct body * bodies, const int nbodies, struct node * nodep)
-{
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	drawtree(nodep);	
-	drawbodies(bodies, nbodies);
-	
-	glfwSwapBuffers();
 }
 
 void drawbodies(struct body * bodies, const int nbodies)
@@ -116,6 +106,15 @@ void drawtree(struct node * nodep)
 	if(nodep->q4){ drawtree(nodep->q4); }	
 }
 
+void draw(struct body * bodies, const int nbodies, struct node * nodep)
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	drawtree(nodep);	
+	drawbodies(bodies, nbodies);
+	
+	glfwSwapBuffers();
+}
 
 int windowopen()
 {

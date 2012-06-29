@@ -21,10 +21,8 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef DRAW
 #define DRAW
 
-int initwindow();
+int initwindow(int x, int y);
 void draw(struct body * bodies, const int nbodies, struct node * nodep);
-void drawbodies(struct body * bodies, const int nbodies);
-void drawtree(struct node * nodep);
 void closewindow();
 int windowopen();
 

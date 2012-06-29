@@ -21,12 +21,34 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include "nbody.h"
 
-int readbodies()
+
+int readbodies(const char * infilename, struct body * bodies, int *nbodies, double *timestep, double *G, double *fudge, double *treeratio)
 {
-	
+	FILE * infile;
+	if(!(infile = fopen(infilename, "r")));
+	{
+		return 0;
+	}
+	fscanf(infile, "%le %le %le %le %d",timestep, G, fudge, treeratio, nbodies);
+	for(int i = 0; i < *nbodies; i++)
+	{
+		fscanf(infile,"%le %le %le %le %le", &bodies[i].m, &bodies[i].x, &bodies[i].y, &bodies[i].vx, &bodies[i].vy);
+	}
+	return 1;
 }
 
-int writebodies(const struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio)
+int writebodies(const char * outfilename, const struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio)
 {
+	FILE * outfile; 
+	if(!(outfile = fopen(outfilename, "w")))
+	{
+		return 0;
+	}
+	fprintf(outfile,"%1.16e\n%1.16e\n%1.16e\n%1.16e\n%d\n",timestep, G, fudge, treeratio, nbodies);
+	for(int i = 0; i < nbodies; i++)
+	{
+		fprintf(outfile,"%1.16e %1.16e %1.16e %1.16e %1.16e\n", bodies[i].m, bodies[i].x, bodies[i].y, bodies[i].vx, bodies[i].vy);
+	}
+	return 1;
 	
 }
