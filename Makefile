@@ -3,6 +3,8 @@ LDFLAGS=-lm -lglfw
 
 all: nbody
 
+util.o: util.c
+	gcc -c util.c -o util.o $(CFLAGS)
 fileio.o: fileio.c
 	gcc -c fileio.c -o fileio.o $(CFLAGS)
 tree.o: tree.c
@@ -11,8 +13,8 @@ draw.o: draw.c
 	gcc -c draw.c -o draw.o $(CFLAGS)
 nbody.o: nbody.c
 	gcc -c nbody.c -o nbody.o $(CFLAGS)
-nbody: nbody.o tree.o draw.o fileio.o
-	gcc nbody.o tree.o draw.o fileio.o -o nbody $(CFLAGS) $(LDFLAGS)  
+nbody: nbody.o tree.o draw.o fileio.o util.o
+	gcc nbody.o tree.o draw.o fileio.o util.o -o nbody $(CFLAGS) $(LDFLAGS)  
 
 clean:
 	rm -rf *.o nbody

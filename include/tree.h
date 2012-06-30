@@ -21,8 +21,6 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TREE
 #define TREE
 
-enum quadrant { q1, q2, q3, q4 };
-
 struct node {
 	double totalmass;	
 	double centerx, centery;
@@ -35,11 +33,7 @@ struct node {
 	struct node * q4;
 };
 
-double max (double a, double b);
-double min (double a, double b);
-enum quadrant getquadrant(double x, double y, double xmin, double xmax, double ymin, double ymax);
 struct node * createnode(struct body * bodyp, double xmin, double xmax, double ymin, double ymax);
-void updatecenterofmass(struct node * nodep, struct body * bodyp);
 void insertbody(struct body * insbody, struct node * nodep);
 void treesum(struct node * nodep, struct body * bodyp, double G, double fudge, double ratiothreshold );
 void destroytree(struct node * nodep);

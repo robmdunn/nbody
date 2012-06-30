@@ -21,19 +21,11 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include "tree.h"
 #include "nbody.h"
+#include "util.h"
 
-double max (double a, double b)
-{
-	return (a > b ? a : b);
-}
-
-double min (double a, double b)
-{
-	return (a < b ? a : b);
-}
+enum quadrant { q1, q2, q3, q4 };
 
 enum quadrant getquadrant(double x, double y, double xmin, double xmax, double ymin, double ymax)
 {

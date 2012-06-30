@@ -27,11 +27,7 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include "tree.h"
 #include "draw.h"
 #include "fileio.h"
-
-double randf() 
-{
-	return (double)rand() / (double)RAND_MAX;
-}
+#include "util.h"
 
 struct body * randinitbodies(const int nbodies, const double mass, const double spin, const double mzero)
 {
@@ -124,30 +120,6 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 		for(int i = 0; i < nbodies; i++)  //sum forces
 		{			
 			treesum(rootnode, bodies+i, G, fudge, treeratio);
-			//G_m1 = G*bodies[i].m;
-			
-			//for(int j = i+1; j < nbodies; j ++)
-			//{ 
-
-				//dx = bodies[j].x - bodies[i].x;
-				//dy = bodies[j].y - bodies[i].y;
-				//rsqr = pow(dx,2) + pow(dy,2);
-			
-				//force = (G_m1*bodies[j].m)/(fudge+rsqr);
-								
-				//r = sqrt(rsqr);
-				//f_over_r = force/r;
-				
-				//dx_f_over_r = f_over_r*dx;
-				//dy_f_over_r = f_over_r*dy;
-	
-				//bodies[i].fx += dx_f_over_r;
-				//bodies[i].fy += dy_f_over_r;
-				//bodies[j].fx -= dx_f_over_r;
-				//bodies[j].fy -= dy_f_over_r;
-				
-				////printf("p1=%d p2=%d dist=%e f=%e\n",i,j,dist,force);
-			//}
 		}
 
 		#pragma omp for
@@ -183,7 +155,7 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 				
 		runtimestep(bodies, nbodies, timestep, G, fudge, treeratio);
 		stepnum++;
-		if(write_interval!=0 && stepnum % write_interval != 0)
+		if(write_interval!=0 && outfile && stepnum % write_interval != 0)
 		{
 			writebodies(outfile, bodies, nbodies, timestep, G, fudge, treeratio);
 		}
@@ -191,6 +163,27 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 	
 	return 1;
 	
+}
+
+void printhelp()
+{
+	printf("This program solves 2d F=G*m1*m2/(r^2+s) for n bodies\nAlgorthm based on Barnes-Hut tree\n");
+	printf("Usage: nbody [options]\n");
+	printf("List of options:\n");
+	printf("\t-h\t\tshow this help output\n");
+	printf("\t-dt <num>\tspecify timestep\n");
+	printf("\t-tr <num>\tspecify tree ratio\n\t\t\t(distance to center of mass/quadrant diagonal size)\n");
+	printf("\t-g <num>\tspecify G in force equation [6.67e-11]\n");
+	printf("\t-sf <num>\tspecify softening factor s in force equation [0.005]\n");
+	printf("\t-xy <x> <y> \tspecify window size\n");
+	printf("\t-r <filename>\tresume from specified filename\n\t\t\t(if this is not set a random distribution is used)\n");
+	printf("\t-o <filename>\toutput to file <filename>\n");
+	printf("\t-nsteps <num>\tspecify output frequency in steps [100]\n");
+	printf("\t-n <num>\tspecify number of bodies for random distribution [100]\n");
+	printf("\t-m <num>\tspecify mass for random distribution [2000]\n");
+	printf("\t-s <num>\tspecify spin for random distribution [0.05]\n");
+	printf("\t-mz <num>\tspecify mass of body starting at 0,0 [1e7]\n");
+	return;
 }
 
 int main(int argc, char * argv[])
@@ -205,51 +198,58 @@ int main(int argc, char * argv[])
 	double mzero = 10000000;
 	char * infile = NULL;
 	char * outfile = NULL;
-	int write_interval = 0;
+	int write_interval = 100;
 	double treeratio = 3; // threshold for ratio of distance to quadrant size for treesum
+	int help = 0;
+	int x = 600, y = 600;
 	
 	for(int i = 1; i < argc; i++)
 	{
+		if(!strcmp("-h",argv[i])) { help = 1; }
 		if(!strcmp("-n",argv[i])) { nbodies = atoi(argv[i+1]); i++; }
 		if(!strcmp("-dt",argv[i])) { timestep = atof(argv[i+1]); i++; }
 		if(!strcmp("-tr",argv[i])) { treeratio = atof(argv[i+1]); i++; }
 		if(!strcmp("-g",argv[i])) { G = atof(argv[i+1]); i++; }
-		if(!strcmp("-f",argv[i])) { fudge = atof(argv[i+1]); i++; }
+		if(!strcmp("-sf",argv[i])) { fudge = atof(argv[i+1]); i++; }
 		if(!strcmp("-m",argv[i])) { mass = atof(argv[i+1]); i++; }
 		if(!strcmp("-s",argv[i])) { spin = atof(argv[i+1]); i++; }
 		if(!strcmp("-mz",argv[i])) { mzero = atof(argv[i+1]); i++; }
 		if(!strcmp("-r",argv[i])) { infile = argv[i+1]; i++; }
 		if(!strcmp("-o",argv[i])) { outfile = argv[i+1]; i++; }
 		if(!strcmp("-nsteps",argv[i])) { write_interval = atoi(argv[i+1]); i++; }
+		if(!strcmp("-xy", argv[i])) { x = atoi(argv[i+1]); y = atoi(argv[i+2]); i+=2; }
 	}
 	
 	srand(1);  //lets seed RNG with a constant to make this easier to debug
-	
-	if(infile)
+	if(help)
 	{
-		if(!readbodies(infile, &bodies, &nbodies, &timestep, &G, &fudge, &treeratio))
+		printhelp();
+		return 0;
+	}
+	if(infile) //if infile was specified...
+	{
+		if(!readbodies(infile, &bodies, &nbodies, &timestep, &G, &fudge, &treeratio)) //read file
 		{
 			printf("failed to read file %s\n",infile);
 			return 1;
 		}
-	} else if(!(bodies = randinitbodies(nbodies, mass, spin, mzero)))  //allocate + initialize bodies
+	} else if(!(bodies = randinitbodies(nbodies, mass, spin, mzero)))  //else allocate + initialize bodies
 	{
 		printf("Failed to allocate memory for %d bodies\n",nbodies);
 		return 1;
 	}
 	
-	if(!initwindow(600, 600)) //initialize window
+	if(!initwindow(x, y)) //initialize window
 	{
 		printf("Failed to initialize GL, exit\n");
 		return 1;
 	}
 
-	printf("Using nbodies = %d\n", nbodies);
-	printf("mass = %e\n", mass);
+	printf("nbodies = %d\n", nbodies);
 	printf("timestep = %e\n", timestep);
 	printf("tree threshold ratio = %f\n", treeratio);
 	printf("G = %e\n",G);
-	printf("fudge = %f\n", fudge);
+	printf("softening factor = %f\n", fudge);
 
 	printf("Entering simulation loop\n");
 	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio, write_interval, outfile);
