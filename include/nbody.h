@@ -35,7 +35,7 @@ struct body {
 double randf();
 struct body * randinitbodies(const int nbodies, const double mass, const double spin, const double mzero);
 int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio);
-int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio);
+int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio, const int write_interval, const char * outfile);
 void freebodies(struct body * bodies);
 
 

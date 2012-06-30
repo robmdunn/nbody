@@ -21,7 +21,7 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef FILEIO
 #define FILEIO
 
-int readbodies(const char * infilename, struct body * bodies, int *nbodies, double *timestep, double *G, double *fudge, double *treeratio);
+int readbodies(const char * infilename, struct body ** bodies, int *nbodies, double *timestep, double *G, double *fudge, double *treeratio);
 int writebodies(const char * outfilename, const struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio);
 
 #endif

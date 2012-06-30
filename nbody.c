@@ -21,6 +21,7 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <omp.h>
 #include "nbody.h"
 #include "tree.h"
@@ -169,9 +170,10 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 	return 0;
 }
 
-int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio)
+int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio, const int write_interval, const char * outfile)
 {
 	double simtime = 0.0;
+	int stepnum = 0;
 	
 	while (windowopen())
 	{
@@ -180,7 +182,11 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 		printf("time: %f\r",simtime);
 				
 		runtimestep(bodies, nbodies, timestep, G, fudge, treeratio);
-					
+		stepnum++;
+		if(write_interval!=0 && stepnum % write_interval != 0)
+		{
+			writebodies(outfile, bodies, nbodies, timestep, G, fudge, treeratio);
+		}
 	} 
 	
 	return 1;
@@ -189,7 +195,7 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 
 int main(int argc, char * argv[])
 {
-	int nbodies;
+	int nbodies = 100;
 	struct body * bodies;
 	double mass = 2000; 
 	double G = 6.67384e-11;
@@ -197,46 +203,36 @@ int main(int argc, char * argv[])
 	double fudge = 0.005;  //"Softening Factor" to prevent singularity in force calculation
 	double spin = 0.05;
 	double mzero = 10000000;
-
+	char * infile = NULL;
+	char * outfile = NULL;
+	int write_interval = 0;
 	double treeratio = 3; // threshold for ratio of distance to quadrant size for treesum
 	
-	if(argc!=2 && argc!= 5 && argc!=7 && argc!=10)
+	for(int i = 1; i < argc; i++)
 	{
-		printf("usage: %s <nbodies> [<mass> <timestep> <tree ratio>[<G> <fudge> [<spin> <mzero>]]]\n",argv[0]);
-		return 1;
+		if(!strcmp("-n",argv[i])) { nbodies = atoi(argv[i+1]); i++; }
+		if(!strcmp("-dt",argv[i])) { timestep = atof(argv[i+1]); i++; }
+		if(!strcmp("-tr",argv[i])) { treeratio = atof(argv[i+1]); i++; }
+		if(!strcmp("-g",argv[i])) { G = atof(argv[i+1]); i++; }
+		if(!strcmp("-f",argv[i])) { fudge = atof(argv[i+1]); i++; }
+		if(!strcmp("-m",argv[i])) { mass = atof(argv[i+1]); i++; }
+		if(!strcmp("-s",argv[i])) { spin = atof(argv[i+1]); i++; }
+		if(!strcmp("-mz",argv[i])) { mzero = atof(argv[i+1]); i++; }
+		if(!strcmp("-r",argv[i])) { infile = argv[i+1]; i++; }
+		if(!strcmp("-o",argv[i])) { outfile = argv[i+1]; i++; }
+		if(!strcmp("-nsteps",argv[i])) { write_interval = atoi(argv[i+1]); i++; }
 	}
-	
-	nbodies = atoi(argv[1]);  // get a pile of command line arguments
-	if(argc==5 || argc == 7 || argc==9)
-	{
-		mass = atof(argv[2]);
-		timestep = atof(argv[3]);
-		treeratio = atof(argv[4]);
-		if(argc==7 || argc==9)
-		{
-			G = atof(argv[5]);
-			fudge = atof(argv[6]);
-			if(argc==9)
-			{
-				spin = atof(argv[7]);
-				mzero = atof(argv[8]);
-			}
-		}
-	}
-		
-	printf("Using nbodies = %d\n", nbodies);
-	printf("mass = %e kg\n", mass);
-	printf("timestep = %e sec\n", timestep);
-	printf("tree threshold ratio = %f\n", treeratio);
-	printf("G = %e N (m/kg)^2\n",G);
-	printf("fudge = %f\n", fudge);
-	printf("spin = %f\n", spin);
-	printf("mzero mass = %e\n",mzero);
 	
 	srand(1);  //lets seed RNG with a constant to make this easier to debug
 	
-	
-	if(!(bodies = randinitbodies(nbodies, mass, spin, mzero)))  //allocate + initialize bodies
+	if(infile)
+	{
+		if(!readbodies(infile, &bodies, &nbodies, &timestep, &G, &fudge, &treeratio))
+		{
+			printf("failed to read file %s\n",infile);
+			return 1;
+		}
+	} else if(!(bodies = randinitbodies(nbodies, mass, spin, mzero)))  //allocate + initialize bodies
 	{
 		printf("Failed to allocate memory for %d bodies\n",nbodies);
 		return 1;
@@ -247,9 +243,16 @@ int main(int argc, char * argv[])
 		printf("Failed to initialize GL, exit\n");
 		return 1;
 	}
-	//writebodies("test.bdy", bodies, nbodies, timestep, G, fudge, treeratio);
+
+	printf("Using nbodies = %d\n", nbodies);
+	printf("mass = %e\n", mass);
+	printf("timestep = %e\n", timestep);
+	printf("tree threshold ratio = %f\n", treeratio);
+	printf("G = %e\n",G);
+	printf("fudge = %f\n", fudge);
+
 	printf("Entering simulation loop\n");
-	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio);
+	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio, write_interval, outfile);
 		
 	closewindow();
 	
