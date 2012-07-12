@@ -29,7 +29,10 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include "fileio.h"
 #include "util.h"
 
+
+
 struct body * randinitbodies(const int nbodies, const double mass, const double spin, const double mzero)
+//randomly initialize bodies in r and theta, and give them a spin around mzero 
 {
 	struct body * bodies;
 	double r, theta;
@@ -81,6 +84,7 @@ void freebodies(struct body * bodies)
 }
 
 int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio)
+//recalculate forces on bodies, then integrate force and velocity 
 {
 	double dx, dy, r, rsqr; //x distance, y distance, distance, distance^2
 	double force;
@@ -143,6 +147,7 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 }
 
 int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio, const int write_interval, const char * outfile)
+//simulation loop,  increments the timer and runs timesteps while the window remains open, writes bodies to file at specified intervals.
 {
 	double simtime = 0.0;
 	int stepnum = 0;
@@ -155,7 +160,7 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 				
 		runtimestep(bodies, nbodies, timestep, G, fudge, treeratio);
 		stepnum++;
-		if(write_interval!=0 && outfile && stepnum % write_interval != 0)
+		if(write_interval!=0 && outfile && stepnum % write_interval == 0)
 		{
 			writebodies(outfile, bodies, nbodies, timestep, G, fudge, treeratio);
 		}
@@ -187,6 +192,7 @@ void printhelp()
 }
 
 int main(int argc, char * argv[])
+//main collects command line arguments, allocs/initializes bodies, then enters main simulation loop
 {
 	int nbodies = 100;
 	struct body * bodies;

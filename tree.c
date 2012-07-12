@@ -28,6 +28,7 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 enum quadrant { q1, q2, q3, q4 };
 
 enum quadrant getquadrant(double x, double y, double xmin, double xmax, double ymin, double ymax)
+//makes a rectangle with bounds of xmin,xmax,ymin,ymax, and returns the quadrant that (x,y) is in
 {
 	double midx, midy;
 	
@@ -58,6 +59,7 @@ enum quadrant getquadrant(double x, double y, double xmin, double xmax, double y
 
 
 struct node * createnode(struct body * bodyp, double xmin, double xmax, double ymin, double ymax)
+//creates a leaf node to insert into the tree
 {
 	struct node * rootnode;
 	if(!(rootnode=malloc(sizeof(struct node))))
@@ -83,6 +85,7 @@ struct node * createnode(struct body * bodyp, double xmin, double xmax, double y
 }
 
 void updatecenterofmass(struct node * nodep, struct body * bodyp)
+//updates the center of mass after inserting a point into a branch
 {
 	nodep->centerx = (nodep->totalmass*nodep->centerx + bodyp->m*bodyp->x)/(nodep->totalmass + bodyp->m);
 	nodep->centery = (nodep->totalmass*nodep->centery + bodyp->m*bodyp->y)/(nodep->totalmass + bodyp->m);
@@ -91,6 +94,7 @@ void updatecenterofmass(struct node * nodep, struct body * bodyp)
 }
 
 void insertbody(struct body * insbody, struct node * nodep)
+//inserts a body into the tree, converting leaf nodes into branches if necessary
 {
 	enum quadrant existingquad, newquad;
 	double xmid, ymid;
@@ -98,7 +102,7 @@ void insertbody(struct body * insbody, struct node * nodep)
 	xmid = nodep->xmin + 0.5*(nodep->xmax - nodep->xmin);
 	ymid = nodep->ymin + 0.5*(nodep->ymax - nodep->ymin);
 		
-	if(nodep->bodyp != NULL)
+	if(nodep->bodyp != NULL) //if the node is a leaf convert to a branch by inserting the leaf point into one of its subquadrants
 	{
 		existingquad = getquadrant(nodep->bodyp->x, nodep->bodyp->y, nodep->xmin, nodep->xmax, nodep->ymin, nodep->ymax);
 			
@@ -124,7 +128,7 @@ void insertbody(struct body * insbody, struct node * nodep)
 	
 	updatecenterofmass(nodep,insbody);
 	
-	switch (newquad)
+	switch (newquad) //insert the new point into one of the quadrants if empty, otherwise recurse deeper into tree
 	{
 	case q1:
 		if(nodep->q1 == NULL)
@@ -163,6 +167,7 @@ void insertbody(struct body * insbody, struct node * nodep)
 }
 
 void treesum(struct node * nodep, struct body * bodyp, double G, double fudge, double ratiothreshold )
+//sum the forces on body bodyp from points in tree with root node nodep
 {
 	double dx, dy, r, rsqr; //x distance, y distance, distance, distance^2
 	double force;
@@ -197,6 +202,7 @@ void treesum(struct node * nodep, struct body * bodyp, double G, double fudge, d
 }
 
 void destroytree(struct node * nodep)
+//recursively delete subnodes, then delete self
 {
 	if(nodep != NULL)
 	{
