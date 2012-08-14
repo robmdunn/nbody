@@ -24,7 +24,7 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include "tree.h"
 #include "draw.h"
 
-int initwindow(int x, int y)
+int initwindow(int x, int y, float pointsize)
 {
 	
 	if(!glfwInit())	//initialize GLFW
@@ -51,7 +51,7 @@ int initwindow(int x, int y)
 
 	glOrtho (-1.5f, 1.5f, -1.5f, 1.5f, 0, 1);
 	
-	glPointSize(1);
+	glPointSize(pointsize);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
 	printf("GL Init\n");

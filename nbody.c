@@ -180,7 +180,9 @@ void printhelp()
 	printf("\t-tr <num>\tspecify tree ratio\n\t\t\t(distance to center of mass/quadrant diagonal size)\n");
 	printf("\t-g <num>\tspecify G in force equation [6.67e-11]\n");
 	printf("\t-sf <num>\tspecify softening factor s in force equation [0.005]\n");
-	printf("\t-xy <x> <y> \tspecify window size\n");
+	printf("\t-x <x> \tspecify window x size [600]\n");
+	printf("\t-y <y> \tspecify window y size [600]\n");
+	printf("\t-p <num>\tspecify body point size [1.0]\n");
 	printf("\t-r <filename>\tresume from specified filename\n\t\t\t(if this is not set a random distribution is used)\n");
 	printf("\t-o <filename>\toutput to file <filename>\n");
 	printf("\t-nsteps <num>\tspecify output frequency in steps [100]\n");
@@ -188,6 +190,7 @@ void printhelp()
 	printf("\t-m <num>\tspecify mass for random distribution [2000]\n");
 	printf("\t-s <num>\tspecify spin for random distribution [0.05]\n");
 	printf("\t-mz <num>\tspecify mass of body starting at 0,0 [1e7]\n");
+
 	return;
 }
 
@@ -208,6 +211,7 @@ int main(int argc, char * argv[])
 	double treeratio = 3; // threshold for ratio of distance to quadrant size for treesum
 	int help = 0;
 	int x = 600, y = 600;
+	float pointsize = 1;
 	
 	for(int i = 1; i < argc; i++)
 	{
@@ -223,7 +227,10 @@ int main(int argc, char * argv[])
 		if(!strcmp("-r",argv[i])) { infile = argv[i+1]; i++; }
 		if(!strcmp("-o",argv[i])) { outfile = argv[i+1]; i++; }
 		if(!strcmp("-nsteps",argv[i])) { write_interval = atoi(argv[i+1]); i++; }
-		if(!strcmp("-xy", argv[i])) { x = atoi(argv[i+1]); y = atoi(argv[i+2]); i+=2; }
+		if(!strcmp("-x", argv[i])) { x = atoi(argv[i+1]); i+=1; }
+		if(!strcmp("-y", argv[i])) { y = atoi(argv[i+1]); i+=1; }
+		if(!strcmp("-p", argv[i])) { pointsize = (float) atof(argv[i+1]); i+=1; }
+		
 	}
 	
 	srand(1);  //lets seed RNG with a constant to make this easier to debug
@@ -245,7 +252,7 @@ int main(int argc, char * argv[])
 		return 1;
 	}
 	
-	if(!initwindow(x, y)) //initialize window
+	if(!initwindow(x, y, pointsize)) //initialize window
 	{
 		printf("Failed to initialize GL, exit\n");
 		return 1;
