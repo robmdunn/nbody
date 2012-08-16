@@ -54,14 +54,14 @@ int initwindow(int x, int y, float pointsize)
 	glPointSize(pointsize);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
-	printf("GL Init\n");
+	//printf("GL Init\n");
 	
 	return 1;
 }
 
 void closewindow()
 {
-	printf("\nTerminate GL\n");
+	//printf("\nTerminate GL\n");
 	glfwTerminate();
 }
 

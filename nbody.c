@@ -78,7 +78,7 @@ struct body * randinitbodies(const int nbodies, const double mass, const double 
 
 void freebodies(struct body * bodies)
 {
-	printf("Free mem\n");
+	//printf("Free mem\n");
 	free(bodies);
 	return;
 }
@@ -264,7 +264,7 @@ int main(int argc, char * argv[])
 	printf("G = %e\n",G);
 	printf("softening factor = %f\n", fudge);
 
-	printf("Entering simulation loop\n");
+	//printf("Entering simulation loop\n");
 	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio, write_interval, outfile);
 		
 	closewindow();
