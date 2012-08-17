@@ -86,11 +86,6 @@ void freebodies(struct body * bodies)
 int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio)
 //recalculate forces on bodies, then integrate force and velocity 
 {
-	double dx, dy, r, rsqr; //x distance, y distance, distance, distance^2
-	double force;
-	double G_m1;
-	double f_over_r;
-	double dx_f_over_r, dy_f_over_r;
 	struct node * rootnode;
 	double xmin, xmax, ymin, ymax;
 	
@@ -111,6 +106,7 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 	
 	printf("xmin=%f xmax=%f ymin=%f ymax=%f ",xmin,xmax,ymin,ymax);
 	
+
 	rootnode = createnode(bodies+0,xmin,xmax,ymin,ymax);
 	
 	for(int i = 1; i < nbodies; i++)
@@ -118,7 +114,7 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 		insertbody(bodies+i, rootnode);
 	}
 	
-	#pragma omp parallel private(dx,dy,r,rsqr,force,G_m1,f_over_r,dx_f_over_r,dy_f_over_r)
+	#pragma omp parallel
 	{		
 		#pragma omp for schedule(static,1)
 		for(int i = 0; i < nbodies; i++)  //sum forces
