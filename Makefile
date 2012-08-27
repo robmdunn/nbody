@@ -1,4 +1,4 @@
-CFLAGS=-march=native -ggdb3 -pg -O2 -I./include -std=c99 -fopenmp 
+CFLAGS=-march=native -ggdb3 -O2 -I./include -std=c99 -fopenmp 
 LDFLAGS=-lm -lglfw
 
 all: nbody

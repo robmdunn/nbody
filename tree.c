@@ -65,6 +65,7 @@ struct node * createnode(struct body * bodyp, double xmin, double xmax, double y
 	if(!(rootnode=malloc(sizeof(struct node))))
 	{
 		printf("Unable to allocate node, exit");
+		return 0;
 	}
 	
 	rootnode->totalmass = bodyp->m;
@@ -202,7 +203,7 @@ void treesum(struct node * nodep, struct body * bodyp, double G, double fudge, d
 }
 
 void destroytree(struct node * nodep)
-//recursively delete subnodes, then delete self
+//recursively free subnodes, then free self
 {
 	if(nodep != NULL)
 	{
