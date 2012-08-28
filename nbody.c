@@ -160,7 +160,7 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 		{
 			writebodies(outfile, bodies, nbodies, timestep, G, fudge, treeratio);
 		}
-		if(stepnum>200) return 1;
+		
 	} 
 	
 	return 1;
