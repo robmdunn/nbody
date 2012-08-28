@@ -75,6 +75,7 @@ struct node * createnode(struct body * bodyp, double xmin, double xmax, double y
 	rootnode->xmax = xmax;
 	rootnode->ymin = ymin;
 	rootnode->ymax = ymax;
+	rootnode->diag = sqrt(( pow(xmax - xmin, 2) + pow(ymax - ymin, 2) ));
 		
 	rootnode->bodyp = bodyp;
 	rootnode->q1 = NULL;
@@ -171,9 +172,8 @@ void treesum(struct node * nodep, struct body * bodyp, double G, double fudge, d
 //sum the forces on body bodyp from points in tree with root node nodep
 {
 	double dx, dy, r, rsqr; //x distance, y distance, distance, distance^2
-	double force;
-	double f_over_r;
-	double quad_diag_sqr, quad_diag;
+	double accel;
+	double a_over_r;
 		
 	dx = nodep->centerx - bodyp->x;
 	dy = nodep->centery - bodyp->y;
@@ -181,17 +181,13 @@ void treesum(struct node * nodep, struct body * bodyp, double G, double fudge, d
 	rsqr = pow(dx,2) + pow(dy,2);
 	r = sqrt(rsqr);
 	
-	quad_diag_sqr = ( pow(nodep->xmax - nodep->xmin, 2) + pow(nodep->ymax - nodep->ymin, 2) );
-	quad_diag = sqrt(quad_diag_sqr);
-	
-	if( (((r/quad_diag) > ratiothreshold) || (nodep->bodyp))&&(nodep->bodyp!=bodyp) )
+	if( (((r/nodep->diag) > ratiothreshold) || (nodep->bodyp))&&(nodep->bodyp!=bodyp) )
 	{
-		force = (G * nodep->totalmass * bodyp->m)/(fudge + rsqr);
-
-		f_over_r = force/r;
+		accel = (G * nodep->totalmass)/(fudge + rsqr);  //acceleration
+		a_over_r = accel/r;  
 		
-		bodyp->fx += f_over_r*dx;
-		bodyp->fy += f_over_r*dy;		
+		bodyp->ax += a_over_r*dx;
+		bodyp->ay += a_over_r*dy;		
 		
 	} else {
 		if(nodep->q1) { treesum(nodep->q1, bodyp, G, fudge, ratiothreshold); }

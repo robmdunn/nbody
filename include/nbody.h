@@ -29,8 +29,9 @@ struct body {
 	double m; //mass
 	double x, y; //x,y position
 	double vx, vy; //x,y velocity
-	double fx, fy; //x,y force
+	double ax, ay; //x,y accel
 };
+
 
 struct body * randinitbodies(const int nbodies, const double mass, const double spin, const double mzero);
 int runtimestep(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio);

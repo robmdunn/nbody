@@ -26,6 +26,7 @@ struct node {
 	double centerx, centery;
 	double xmin, xmax;
 	double ymin, ymax;
+	double diag;
 	struct body * bodyp;
 	struct node * q1;
 	struct node * q2;

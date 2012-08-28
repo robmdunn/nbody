@@ -48,8 +48,8 @@ struct body * randinitbodies(const int nbodies, const double mass, const double 
 		bodies[i].m = mass;
 		bodies[i].vx = 0.0;
 		bodies[i].vy = 0.0;
-		bodies[i].fx = 0.0;
-		bodies[i].fy = 0.0;
+		bodies[i].ax = 0.0;
+		bodies[i].ay = 0.0;
 		
 		r = randf();
 		theta = 2*PI*randf();
@@ -94,10 +94,10 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 	ymin = 0.0;
 	ymax = 0.0;
 		
-	for(int i = 0; i < nbodies; i++)  //reset forces
+	for(int i = 0; i < nbodies; i++)  //reset accel
 	{
-		bodies[i].fx = 0.0;
-		bodies[i].fy = 0.0;	
+		bodies[i].ax = 0.0;
+		bodies[i].ay = 0.0;	
 		xmin=min(xmin,bodies[i].x);
 		xmax=max(xmax,bodies[i].x);
 		ymin=min(ymin,bodies[i].y);
@@ -117,7 +117,7 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 	#pragma omp parallel
 	{		
 		#pragma omp for schedule(static,1)
-		for(int i = 0; i < nbodies; i++)  //sum forces
+		for(int i = 0; i < nbodies; i++)  //sum accel
 		{			
 			treesum(rootnode, bodies+i, G, fudge, treeratio);
 		}
@@ -126,9 +126,9 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 		for(int i = 0; i < nbodies; i++) 
 		{
 
-			double timestep_over_m = timestep / bodies[i].m;
-			bodies[i].vx += bodies[i].fx * timestep_over_m; // integrate force into velcoity
-			bodies[i].vy += bodies[i].fy * timestep_over_m;
+			
+			bodies[i].vx += bodies[i].ax * timestep; // integrate accel into velcoity
+			bodies[i].vy += bodies[i].ay * timestep;
 			
 			bodies[i].x += timestep*bodies[i].vx; //integrate velocity into position
 			bodies[i].y += timestep*bodies[i].vy;
@@ -160,6 +160,7 @@ int simulateloop(struct body * bodies, const int nbodies, const double timestep,
 		{
 			writebodies(outfile, bodies, nbodies, timestep, G, fudge, treeratio);
 		}
+		if(stepnum>200) return 1;
 	} 
 	
 	return 1;
