@@ -29,7 +29,44 @@ along with Nbody.  If not, see <http://www.gnu.org/licenses/>.
 #include "fileio.h"
 #include "util.h"
 
+#ifdef MPI
+#include <mpi.h>
+int  numtasks, rank, rc; 
 
+int broadcastaccel(struct body * bodies, int srcrank)
+{
+	MPI_Bcast(&(bodies->ax),1,MPI_DOUBLE,srcrank,MPI_COMM_WORLD);
+	MPI_Bcast(&(bodies->ay),1,MPI_DOUBLE,srcrank,MPI_COMM_WORLD);
+}
+
+int broadcastbody(struct body * bodies, int srcrank)
+{
+	MPI_Bcast(&(bodies->m),1,MPI_DOUBLE,srcrank,MPI_COMM_WORLD);
+	MPI_Bcast(&(bodies->x),1,MPI_DOUBLE,srcrank,MPI_COMM_WORLD);
+	MPI_Bcast(&(bodies->y),1,MPI_DOUBLE,srcrank,MPI_COMM_WORLD);
+	MPI_Bcast(&(bodies->vx),1,MPI_DOUBLE,srcrank,MPI_COMM_WORLD);
+	MPI_Bcast(&(bodies->vy),1,MPI_DOUBLE,srcrank,MPI_COMM_WORLD);
+}
+
+void broadcastbodies(int * nbodies, struct body ** bodies)
+{
+	MPI_Bcast(nbodies,1,MPI_INT,0,MPI_COMM_WORLD);
+	if(rank!=0)
+	{
+		if(!(*bodies = malloc( (*nbodies)*sizeof(struct body))))
+		{
+			printf("Error: rank %d failed to allocate memory for %d bodies, Abort\n", rank, *nbodies);
+			MPI_Abort(MPI_COMM_WORLD,0);
+		}
+	}
+	for(int i = 0; i < *nbodies; i++)
+	{
+		broadcastbody((*bodies)+i,0);
+	}
+	return;
+}
+
+#endif
 
 struct body * randinitbodies(const int nbodies, const double mass, const double spin, const double mzero)
 //randomly initialize bodies in r and theta, and give them a spin around mzero 
@@ -78,7 +115,6 @@ struct body * randinitbodies(const int nbodies, const double mass, const double 
 
 void freebodies(struct body * bodies)
 {
-	//printf("Free mem\n");
 	free(bodies);
 	return;
 }
@@ -104,9 +140,6 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 		ymax=max(ymax,bodies[i].y);
 	}
 	
-	printf("xmin=%f xmax=%f ymin=%f ymax=%f ",xmin,xmax,ymin,ymax);
-	
-
 	rootnode = createnode(bodies+0,xmin,xmax,ymin,ymax);
 	
 	for(int i = 1; i < nbodies; i++)
@@ -114,52 +147,83 @@ int runtimestep(struct body * bodies, const int nbodies, const double timestep, 
 		insertbody(bodies+i, rootnode);
 	}
 	
-	#pragma omp parallel
-	{		
-		#pragma omp for schedule(static,1)
+	#pragma omp parallel 
+	{	
+		#pragma omp for
+		#ifdef MPI
+		for(int i = rank; i < nbodies; i+=numtasks)  //sum accel
+		#else
 		for(int i = 0; i < nbodies; i++)  //sum accel
-		{			
+		#endif
+		{
 			treesum(rootnode, bodies+i, G, fudge, treeratio);
 		}
-
-		#pragma omp for
-		for(int i = 0; i < nbodies; i++) 
+	
+		#ifdef MPI
+		for(int i = 0; i < nbodies; i++)
 		{
-
-			
+			broadcastaccel(bodies+i,i%numtasks);
+		}
+		#endif
+	
+		#pragma omp for
+		for(int i = 0; i < nbodies; i++)
+		{			
 			bodies[i].vx += bodies[i].ax * timestep; // integrate accel into velcoity
 			bodies[i].vy += bodies[i].ay * timestep;
 			
 			bodies[i].x += timestep*bodies[i].vx; //integrate velocity into position
 			bodies[i].y += timestep*bodies[i].vy;
-			//printf("p=%d vx=%e vy=%e x=%e y=%e\n", i, bodies[i].vx, bodies[i].vy, bodies[i].x, bodies[i].y);
-		} 
-		
-	}	
-	draw(bodies, nbodies, rootnode);
+		} 		
+	}
+	
+	#ifdef MPI
+	if(rank==0)
+	#endif
+	{
+		draw(bodies, nbodies, rootnode);
+	}
 	
 	destroytree(rootnode);
 	return 0;
 }
 
-int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio, const int write_interval, const char * outfile)
+int simulateloop(struct body * bodies, const int nbodies, const double timestep, const double G, const double fudge, const double treeratio, const int write_interval, const char * outfile, const int graphics)
 //simulation loop,  increments the timer and runs timesteps while the window remains open, writes bodies to file at specified intervals.
 {
 	double simtime = 0.0;
 	int stepnum = 0;
+	int run = 1;
 	
-	while (windowopen())
+	while (run)
 	{
-		
+
 		simtime += timestep;
-		printf("time: %f\r",simtime);
-				
+			
 		runtimestep(bodies, nbodies, timestep, G, fudge, treeratio);
 		stepnum++;
 		if(write_interval!=0 && outfile && stepnum % write_interval == 0)
 		{
 			writebodies(outfile, bodies, nbodies, timestep, G, fudge, treeratio);
 		}
+		
+		#ifdef MPI
+		if(rank==0)
+		#endif
+		{
+			printf("time: %f\r",simtime);
+			if( windowopen() == 0 && graphics == 1) 
+			{
+				run = 0;
+			}
+			/*if(stepnum > 500)
+			{
+				run = 0;
+			}*/
+		}
+		#ifdef MPI
+		MPI_Bcast(&run,1,MPI_INT,0,MPI_COMM_WORLD); 
+		#endif
 		
 	} 
 	
@@ -187,6 +251,7 @@ void printhelp()
 	printf("\t-m <num>\tspecify mass for random distribution [2000]\n");
 	printf("\t-s <num>\tspecify spin for random distribution [0.05]\n");
 	printf("\t-mz <num>\tspecify mass of body starting at 0,0 [1e7]\n");
+	printf("\t-ng \tno graphics\n");
 
 	return;
 }
@@ -209,6 +274,20 @@ int main(int argc, char * argv[])
 	int help = 0;
 	int x = 600, y = 600;
 	float pointsize = 1;
+	int graphics = 1;
+	
+	#ifdef MPI	
+	rc = MPI_Init(&argc,&argv);
+	if (rc != MPI_SUCCESS) 
+	{
+		printf("Error in MPI_Init, Abort.");
+		MPI_Abort(MPI_COMM_WORLD, rc);
+	}
+	MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	printf("nbody: MPI init on rank %d of %d\n",rank, numtasks); 
+	#endif
+	
 	
 	for(int i = 1; i < argc; i++)
 	{
@@ -227,46 +306,62 @@ int main(int argc, char * argv[])
 		if(!strcmp("-x", argv[i])) { x = atoi(argv[i+1]); i+=1; }
 		if(!strcmp("-y", argv[i])) { y = atoi(argv[i+1]); i+=1; }
 		if(!strcmp("-p", argv[i])) { pointsize = (float) atof(argv[i+1]); i+=1; }
-		
+		if(!strcmp("-ng", argv[i])) { graphics = 0; }
 	}
 	
 	srand(1);  //lets seed RNG with a constant to make this easier to debug
-	if(help)
+	
+	#ifdef MPI
+	if(rank==0) 
+	#endif
 	{
-		printhelp();
-		return 0;
-	}
-	if(infile) //if infile was specified...
-	{
-		if(!readbodies(infile, &bodies, &nbodies, &timestep, &G, &fudge, &treeratio)) //read file
+		if(help)
 		{
-			printf("failed to read file %s\n",infile);
+			printhelp();
+			return 0;
+		}
+		
+		if(infile) //if infile was specified...
+		{
+			if(!readbodies(infile, &bodies, &nbodies, &timestep, &G, &fudge, &treeratio)) //read file
+			{
+				printf("failed to read file %s\n",infile);
+				return 1;
+			}
+		} else if(!(bodies = randinitbodies(nbodies, mass, spin, mzero)))  //else allocate + initialize bodies
+		{
+			printf("Failed to allocate memory for %d bodies\n",nbodies);
 			return 1;
 		}
-	} else if(!(bodies = randinitbodies(nbodies, mass, spin, mzero)))  //else allocate + initialize bodies
-	{
-		printf("Failed to allocate memory for %d bodies\n",nbodies);
-		return 1;
+		
+		if(graphics != 0)
+		{
+			if(!initwindow(x, y, pointsize)) //initialize window
+			{
+				printf("Failed to initialize GL, exit\n");
+				return 1;
+			}
+		}
+		
+		printf("nbodies = %d\n", nbodies);
+		printf("timestep = %e\n", timestep);
+		printf("tree threshold ratio = %f\n", treeratio);
+		printf("G = %e\n",G);
+		printf("softening factor = %f\n", fudge);
 	}
 	
-	if(!initwindow(x, y, pointsize)) //initialize window
-	{
-		printf("Failed to initialize GL, exit\n");
-		return 1;
-	}
-
-	printf("nbodies = %d\n", nbodies);
-	printf("timestep = %e\n", timestep);
-	printf("tree threshold ratio = %f\n", treeratio);
-	printf("G = %e\n",G);
-	printf("softening factor = %f\n", fudge);
-
-	//printf("Entering simulation loop\n");
-	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio, write_interval, outfile);
+	#ifdef MPI
+	broadcastbodies(&nbodies,&bodies);
+	#endif
+	
+	simulateloop(bodies, nbodies, timestep, G, fudge, treeratio, write_interval, outfile, graphics);
 		
 	closewindow();
 	
 	freebodies(bodies);
 	
+	#ifdef MPI
+	MPI_Finalize();
+	#endif
 	return 0;
 }

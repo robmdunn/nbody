@@ -4,7 +4,7 @@ nbody
 Barnes-Hut tree based N-body simulation with OpenMP multithreading support
 
 TODO:  
-implement MPI
+fix OpenMP+MPI
 
 Implement sub-timestepping.
 
