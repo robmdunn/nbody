@@ -1,7 +1,7 @@
 nbody
 =====
 
-Barnes-Hut tree based N-body simulation with OpenMP multithreading support
+Barnes-Hut tree based N-body simulation with OpenMP+MPI multithreading support
 
 TODO:  
 fix OpenMP+MPI
