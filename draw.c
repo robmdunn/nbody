@@ -77,11 +77,8 @@ void drawbodies(struct body * bodies, const int nbodies)
 	glEnd();
 }
 
-void drawtree(struct node * nodep)
+void drawtreelines(struct node * nodep)
 {
-	glColor4f(0.3f, 0.3f, 0.3f, 0.0f);
-	
-	glBegin(GL_LINES);
 	glVertex2f(nodep->xmin,nodep->ymin);
 	glVertex2f(nodep->xmax,nodep->ymin);
 	
@@ -93,12 +90,23 @@ void drawtree(struct node * nodep)
 	
 	glVertex2f(nodep->xmin,nodep->ymax);
 	glVertex2f(nodep->xmin,nodep->ymin);
-	glEnd();
+
 	
 	if(nodep->q1){ drawtree(nodep->q1); }
 	if(nodep->q2){ drawtree(nodep->q2); }
 	if(nodep->q3){ drawtree(nodep->q3); }
 	if(nodep->q4){ drawtree(nodep->q4); }	
+}
+
+void drawtree(struct node * nodep)
+{
+	glColor4f(0.3f, 0.3f, 0.3f, 0.0f);
+	
+	glBegin(GL_LINES);
+
+	drawtreelines(nodep);
+
+	glEnd();
 }
 
 void draw(struct body * bodies, const int nbodies, struct node * nodep)
