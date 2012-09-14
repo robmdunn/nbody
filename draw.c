@@ -92,10 +92,10 @@ void drawtreelines(struct node * nodep)
 	glVertex2f(nodep->xmin,nodep->ymin);
 
 	
-	if(nodep->q1){ drawtree(nodep->q1); }
-	if(nodep->q2){ drawtree(nodep->q2); }
-	if(nodep->q3){ drawtree(nodep->q3); }
-	if(nodep->q4){ drawtree(nodep->q4); }	
+	if(nodep->q1){ drawtreelines(nodep->q1); }
+	if(nodep->q2){ drawtreelines(nodep->q2); }
+	if(nodep->q3){ drawtreelines(nodep->q3); }
+	if(nodep->q4){ drawtreelines(nodep->q4); }	
 }
 
 void drawtree(struct node * nodep)
