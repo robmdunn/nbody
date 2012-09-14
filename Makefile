@@ -1,5 +1,5 @@
 CFLAGS=-march=native -ggdb3 -O2 -I./include -std=c99 -fopenmp
-LDFLAGS=-lm -lglfw
+LDFLAGS=-lm -lglfw -lGL
 MPIFLAGS= -DMPI
 
 all: nbody

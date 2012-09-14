@@ -68,12 +68,13 @@ void closewindow()
 void drawbodies(struct body * bodies, const int nbodies)
 {
 	glColor4f(1.0f, 1.0f, 1.0f,0.0f);
+
+	glBegin(GL_POINTS);
 	for(int i=0; i < nbodies; i++)
 	{
-		glBegin(GL_POINTS);
 		glVertex2f(bodies[i].x,bodies[i].y);
-		glEnd();
 	}
+	glEnd();
 }
 
 void drawtree(struct node * nodep)
@@ -83,19 +84,13 @@ void drawtree(struct node * nodep)
 	glBegin(GL_LINES);
 	glVertex2f(nodep->xmin,nodep->ymin);
 	glVertex2f(nodep->xmax,nodep->ymin);
-	glEnd();
 	
-	glBegin(GL_LINES);
 	glVertex2f(nodep->xmax,nodep->ymin);
 	glVertex2f(nodep->xmax,nodep->ymax);
-	glEnd();
 	
-	glBegin(GL_LINES);
 	glVertex2f(nodep->xmax,nodep->ymax);
 	glVertex2f(nodep->xmin,nodep->ymax);
-	glEnd();
 	
-	glBegin(GL_LINES);
 	glVertex2f(nodep->xmin,nodep->ymax);
 	glVertex2f(nodep->xmin,nodep->ymin);
 	glEnd();
